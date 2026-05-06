@@ -1,4 +1,5 @@
 import os
+import responses
 import sys
 import tempfile
 from unittest.mock import patch
@@ -6,7 +7,14 @@ from unittest.mock import patch
 # Add src to path to import utils
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from utils import determine_source, is_docker, get_size, load_config, StreamPlatform
+from utils import (
+    check_stream_live,
+    determine_source,
+    get_size,
+    is_docker,
+    load_config,
+    StreamPlatform,
+)
 
 
 class TestDetermineSource:
@@ -142,3 +150,34 @@ class TestLoadConfig:
         config = load_config("default")
         if config is not None:
             assert isinstance(config, configparser.ConfigParser)
+
+
+class TestStreamIsLive:
+    """Test cases for check_stream_live function"""
+
+    @responses.activate
+    def test_youtube_is_live(self):
+        url = "https://youtube.com/@channelname/live"
+        # Intercept GET request to provide youtube-live-like body
+        responses.add(
+            responses.GET,
+            url,
+            body="<html>"
+            r'<link href="https://www.youtube.com/watch?v=abcd1234" rel="canonical"/>'
+            "</html>",
+        )
+        assert check_stream_live(url)
+
+    @responses.activate
+    def test_youtube_is_not_live(self):
+        url = "https://youtube.com/@channelname/live"
+        # Intercept GET request to provide youtube-channel-like body
+        # (as in what you're redirected to in case a channel is not live)
+        responses.add(
+            responses.GET,
+            url,
+            body="<html>"
+            r'<link href="https://www.youtube.com/channel/abcd1234" rel="canonical"/>'
+            "</html>",
+        )
+        assert not check_stream_live(url)
