@@ -1,6 +1,8 @@
 import os
+import requests
 import sys
 import subprocess
+from bs4 import BeautifulSoup
 from enum import Enum
 from logger import logger
 from pathlib import Path
@@ -57,16 +59,44 @@ def determine_source(stream_source: StreamPlatform, streamer_name: str) -> str |
     streamer_name = streamer_name.strip().lower()
 
     sources: dict[StreamPlatform, str] = {
-        StreamPlatform.TWITCH: f"twitch.tv/{streamer_name}",
-        StreamPlatform.KICK: f"kick.com/{streamer_name}",
-        StreamPlatform.YOUTUBE: f"youtube.com/@{streamer_name}/live",
-        StreamPlatform.RUMBLE: f"rumble.com/user/{streamer_name}",
-        StreamPlatform.DLIVE: f"dlive.tv/{streamer_name}",
+        StreamPlatform.TWITCH: f"https://twitch.tv/{streamer_name}",
+        StreamPlatform.KICK: f"https://kick.com/{streamer_name}",
+        StreamPlatform.YOUTUBE: f"https://youtube.com/@{streamer_name}/live",
+        StreamPlatform.RUMBLE: f"https://rumble.com/user/{streamer_name}",
+        StreamPlatform.DLIVE: f"https://dlive.tv/{streamer_name}",
     }
     return sources.get(stream_source)
 
 
 def check_stream_live(url: str) -> bool:
+    """
+    Check if given stream is live
+
+    Uses different methods for each service, and streamlink as a fallback.
+    """
+    # TODO: proper from-url-to-platform
+    s = "youtube" if "youtube" in url else "twitch"
+    platform = StreamPlatform.from_string(s)
+
+    if platform == StreamPlatform.TWITCH:
+        pass
+    elif platform == StreamPlatform.KICK:
+        pass
+    elif platform == StreamPlatform.YOUTUBE:
+        r = requests.get(url)
+        soup = BeautifulSoup(r.text, "html.parser")
+        live_indicator = "/watch?v="
+        link_element = soup.find("link", rel="canonical")
+
+        if link_element and live_indicator in link_element["href"]:
+            return True
+        else:
+            return False
+    elif platform == StreamPlatform.RUMBLE:
+        pass
+    elif platform == StreamPlatform.DLIVE:
+        pass
+
     # TODO this takes many seconds, find a faster method
     result = run_command(["streamlink", url])
     return result.returncode == 0
