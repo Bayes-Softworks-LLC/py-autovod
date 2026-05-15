@@ -157,11 +157,11 @@ class TestStreamIsLive:
 
     @responses.activate
     def test_youtube_is_live(self):
-        url = "https://youtube.com/@channelname/live"
+        url = "youtube.com/@channelname/live"
         # Intercept GET request to provide youtube-live-like body
         responses.add(
             responses.GET,
-            url,
+            "https://" + url,
             body="<html>"
             r'<link href="https://www.youtube.com/watch?v=abcd1234" rel="canonical"/>'
             "</html>",
@@ -170,12 +170,12 @@ class TestStreamIsLive:
 
     @responses.activate
     def test_youtube_is_not_live(self):
-        url = "https://youtube.com/@channelname/live"
+        url = "youtube.com/@channelname/live"
         # Intercept GET request to provide youtube-channel-like body
         # (as in what you're redirected to in case a channel is not live)
         responses.add(
             responses.GET,
-            url,
+            "https://" + url,
             body="<html>"
             r'<link href="https://www.youtube.com/channel/abcd1234" rel="canonical"/>'
             "</html>",

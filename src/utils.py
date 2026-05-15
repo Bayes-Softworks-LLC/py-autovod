@@ -59,11 +59,11 @@ def determine_source(stream_source: StreamPlatform, streamer_name: str) -> str |
     streamer_name = streamer_name.strip().lower()
 
     sources: dict[StreamPlatform, str] = {
-        StreamPlatform.TWITCH: f"https://twitch.tv/{streamer_name}",
-        StreamPlatform.KICK: f"https://kick.com/{streamer_name}",
-        StreamPlatform.YOUTUBE: f"https://youtube.com/@{streamer_name}/live",
-        StreamPlatform.RUMBLE: f"https://rumble.com/user/{streamer_name}",
-        StreamPlatform.DLIVE: f"https://dlive.tv/{streamer_name}",
+        StreamPlatform.TWITCH: f"twitch.tv/{streamer_name}",
+        StreamPlatform.KICK: f"kick.com/{streamer_name}",
+        StreamPlatform.YOUTUBE: f"youtube.com/@{streamer_name}/live",
+        StreamPlatform.RUMBLE: f"rumble.com/user/{streamer_name}",
+        StreamPlatform.DLIVE: f"dlive.tv/{streamer_name}",
     }
     return sources.get(stream_source)
 
@@ -75,6 +75,7 @@ def check_stream_live(url: str) -> bool:
     Uses different methods for each service, and streamlink as a fallback.
     """
     # TODO: proper from-url-to-platform
+    url = "https://" + url
     s = "youtube" if "youtube" in url else "twitch"
     platform = StreamPlatform.from_string(s)
 
