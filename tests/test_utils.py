@@ -1,4 +1,5 @@
 import os
+import pytest
 import responses
 import sys
 import tempfile
@@ -179,5 +180,27 @@ class TestStreamIsLive:
             body="<html>"
             r'<link href="https://www.youtube.com/channel/abcd1234" rel="canonical"/>'
             "</html>",
+        )
+        assert not check_stream_live(url)
+
+    @pytest.mark.twitch_api
+    @responses.activate
+    def test_twitch_is_live(self):
+        url = "twitch.tv/streamername"
+        # Intercept GET request with an expected response for a live stream
+        responses.add(
+            responses.GET,
+            "https://" + url,
+            json={"data": [{"user_login": "streamername"}], "pagination": {}},
+        )
+        assert check_stream_live(url)
+
+    @pytest.mark.twitch_api
+    @responses.activate
+    def test_twitch_is_not_live(self):
+        url = "twitch.tv/streamername"
+        # Intercept GET request with an expected response for a non-live channel
+        responses.add(
+            responses.GET, "https://" + url, json={"data": [], "pagination": {}}
         )
         assert not check_stream_live(url)
