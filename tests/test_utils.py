@@ -183,24 +183,22 @@ class TestStreamIsLive:
         )
         assert not check_stream_live(url)
 
-    @pytest.mark.twitch_api
     @responses.activate
     def test_twitch_is_live(self):
         url = "twitch.tv/streamername"
+        api_endpoint = "https://api.twitch.tv/helix/streams"
         # Intercept GET request with an expected response for a live stream
         responses.add(
             responses.GET,
-            "https://" + url,
+            api_endpoint,
             json={"data": [{"user_login": "streamername"}], "pagination": {}},
         )
         assert check_stream_live(url)
 
-    @pytest.mark.twitch_api
     @responses.activate
     def test_twitch_is_not_live(self):
         url = "twitch.tv/streamername"
+        api_endpoint = "https://api.twitch.tv/helix/streams"
         # Intercept GET request with an expected response for a non-live channel
-        responses.add(
-            responses.GET, "https://" + url, json={"data": [], "pagination": {}}
-        )
+        responses.add(responses.GET, api_endpoint, json={"data": [], "pagination": {}})
         assert not check_stream_live(url)
