@@ -68,6 +68,42 @@ def determine_source(stream_source: StreamPlatform, streamer_name: str) -> str |
     return sources.get(stream_source)
 
 
+def is_twitch_channel_live(url: str) -> bool:
+    # Last-minute import to avoid circular imports
+    from settings import TWITCH_API_OAUTH_TOKEN, TWITCH_APP_CLIENT_ID
+
+    if TWITCH_API_OAUTH_TOKEN and TWITCH_APP_CLIENT_ID:
+        # Prepare headers and query
+        streamer_login = url.split("/")[-1]
+        payload = {"user_login": streamer_login}
+        headers = {
+            "Authorization": "Bearer " + TWITCH_API_OAUTH_TOKEN,
+            "Client-Id": TWITCH_APP_CLIENT_ID,
+        }
+        # Make call to "streams"-endpoint
+        # https://dev.twitch.tv/docs/api/reference#get-streams
+        r = requests.get(
+            "https://api.twitch.tv/helix/streams", params=payload, headers=headers
+        )
+        try:
+            r.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            if r.status_code == 401:
+                raise requests.exceptions.HTTPError(
+                    "Invalid or expired Twitch API OAuth token."
+                ) from e
+            raise
+
+        # If the data shows any streams present (since we're querying
+        # for only one streamer), that streamer is necessarily live
+        body: dict = r.json()
+        return bool(body["data"])
+
+    else:
+        # If no auth see GraphQL useLive
+        return False
+
+
 def check_stream_live(url: str) -> bool:
     """
     Check if given stream is live
@@ -80,7 +116,8 @@ def check_stream_live(url: str) -> bool:
     platform = StreamPlatform.from_string(s)
 
     if platform == StreamPlatform.TWITCH:
-        pass
+        return is_twitch_channel_live(url)
+
     elif platform == StreamPlatform.KICK:
         pass
     elif platform == StreamPlatform.YOUTUBE:
