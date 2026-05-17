@@ -104,6 +104,17 @@ def is_twitch_channel_live(url: str) -> bool:
         return False
 
 
+def is_youtube_channel_live(url: str) -> bool:
+    r = requests.get(url)
+    r.raise_for_status()
+    soup = BeautifulSoup(r.text, "html.parser")
+    live_indicator = "/watch?v="
+    link_element = soup.find("link", rel="canonical")
+
+    # Confirm whether body contains `<link ... href=".../watch?v=...">`
+    return link_element and (live_indicator in link_element["href"])
+
+
 def check_stream_live(url: str) -> bool:
     """
     Check if given stream is live
@@ -121,15 +132,8 @@ def check_stream_live(url: str) -> bool:
     elif platform == StreamPlatform.KICK:
         pass
     elif platform == StreamPlatform.YOUTUBE:
-        r = requests.get(url)
-        soup = BeautifulSoup(r.text, "html.parser")
-        live_indicator = "/watch?v="
-        link_element = soup.find("link", rel="canonical")
+        return is_youtube_channel_live(url)
 
-        if link_element and live_indicator in link_element["href"]:
-            return True
-        else:
-            return False
     elif platform == StreamPlatform.RUMBLE:
         pass
     elif platform == StreamPlatform.DLIVE:
